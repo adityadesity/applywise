@@ -22,3 +22,5 @@ uploads/
 
 # Alembic cache
 *.sqlite3
+
+./backend/alembic.ini
