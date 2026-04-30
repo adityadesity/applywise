@@ -1,22 +1,16 @@
-from dotenv import load_dotenv
-
 from pydantic import BaseModel
 from typing import List
-
-from langchain_huggingface import (
-    HuggingFaceEndpoint,
-    ChatHuggingFace
-)
 
 from langchain_core.output_parsers import (
     PydanticOutputParser
 )
 
+from app.core.llm import llm
 
-load_dotenv()
 
-
-class CandidateProfileSchema(BaseModel):
+class CandidateProfileSchema(
+    BaseModel
+):
     skills: List[str]
     roles: List[str]
     education: List[str]
@@ -24,17 +18,6 @@ class CandidateProfileSchema(BaseModel):
 
 parser = PydanticOutputParser(
     pydantic_object=CandidateProfileSchema
-)
-
-
-llm = HuggingFaceEndpoint(
-    repo_id="Qwen/Qwen2.5-7B-Instruct",
-    task="text-generation",
-    max_new_tokens=1000
-)
-
-model = ChatHuggingFace(
-    llm=llm
 )
 
 
@@ -46,15 +29,17 @@ def extract_candidate_profile(
     )
 
     prompt = f"""
-    Extract candidate profile from resume.
+        Extract candidate profile from the resume.
 
-    {format_instructions}
+        {format_instructions}
 
-    Resume:
-    {resume_text}
-    """
+        Resume:
+        {resume_text}
+        """
 
-    response = model.invoke(prompt)
+    response = llm.invoke(
+        prompt
+    )
 
     parsed_output = parser.parse(
         response.content

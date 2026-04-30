@@ -10,7 +10,7 @@ from app.api.deps import get_current_user
 from app.models.user import User
 from fastapi.security import OAuth2PasswordRequestForm
 
-router = APIRouter()
+router = APIRouter(tags=["Authentication"])
 
 
 @router.post("/signup")
