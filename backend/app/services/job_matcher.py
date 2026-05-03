@@ -42,6 +42,7 @@ def match_candidate_to_job(
         5. Salary expectation
 
         Return a score from 0 to 100.
+        In reasoning section, use first person as if you are telling the candidate. Keep it very short and crisp.
 
         {format_instructions}
 

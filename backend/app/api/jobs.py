@@ -30,17 +30,7 @@ from app.models.job_match import (
     JobMatch
 )
 
-from app.services.job_matcher import (
-    match_candidate_to_job
-)
 
-from app.models.candidate_profile import (
-    CandidateProfile
-)
-
-from app.api.deps import (
-    get_current_user
-)
 
 from app.models.user import User
 
@@ -77,7 +67,122 @@ def get_jobs(
 
     return jobs
 
+@router.get("/recommendations")
+def get_recommendations(
+    skip: int = 0,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        get_current_user
+    )
+):
+    matches = (
+    db.query(
+        JobMatch,
+        Job
+    )
+    .join(
+        Job,
+        JobMatch.job_id == Job.id
+    )
+    .filter(
+        JobMatch.user_id == current_user.id
+    )
+    .order_by(
+        JobMatch.score.desc()
+    )
+    .offset(skip)
+    .limit(limit)
+    .all()
+    )
+    results = []
 
+    for match, job in matches:
+        results.append({
+            "job_id": job.id,
+            "title": job.title,
+            "company": job.company,
+            "location": job.location,
+            "description": job.description,
+            "salary_min": job.salary_min,
+            "salary_max": job.salary_max,
+            "apply_url": job.apply_url,
+            "source": job.source,
+            "match_score": match.score,
+            "matched_skills": match.matched_skills,
+            "missing_skills": match.missing_skills,
+            "reasoning": match.reasoning
+        })
+
+    return results
+@router.get("/recommendations/{job_id}")
+def get_recommendation_details(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        get_current_user
+    )
+):
+    recommendation = (
+        db.query(
+            JobMatch
+        )
+        .filter(
+            JobMatch.user_id == current_user.id,
+            JobMatch.job_id == job_id
+        )
+        .first()
+    )
+
+    if not recommendation:
+        raise HTTPException(
+            status_code=404,
+            detail="Recommendation not found"
+        )
+
+    job = (
+        db.query(
+            Job
+        )
+        .filter(
+            Job.id == job_id
+        )
+        .first()
+    )
+
+    if not job:
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found"
+        )
+
+    return {
+        "job_id": job.id,
+        "title": job.title,
+        "company": job.company,
+        "location": job.location,
+        "description": job.description,
+        "salary_min": job.salary_min,
+        "salary_max": job.salary_max,
+        "apply_url": job.apply_url,
+        "source": job.source,
+        "match_score": recommendation.score,
+        "matched_skills": recommendation.matched_skills,
+        "missing_skills": recommendation.missing_skills,
+        "reasoning": recommendation.reasoning
+    }
+
+@router.post("/recommendations/refresh")
+def refresh_recommendations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        get_current_user
+    )
+):
+    return match_all_jobs(
+        db=db,
+        current_user=current_user
+    )
 @router.get("/{job_id}")
 def get_job(
     job_id: int,
@@ -165,7 +270,9 @@ def match_job(
 
 
 
-@router.post("/match-all")
+
+# Deprecating the api and making it as a utility function
+# @router.post("/match-all")
 def match_all_jobs(
     db: Session = Depends(get_db),
     current_user: User = Depends(
@@ -278,3 +385,4 @@ def match_all_jobs(
         "matches":
         matched_results[:10]
     }
+

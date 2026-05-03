@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     HUGGINGFACEHUB_API_TOKEN: str
+    ADZUNA_APP_ID: str
+    ADZUNA_APP_KEY: str
     class Config:
         env_file = ".env"
 
